@@ -48,4 +48,4 @@
 
 ##License
 ---
-[MIT](https://github.com/songbaoming/IncBuildVer)
+[MIT](https://github.com/songbaoming/IncBuildVer/blob/master/LICENSE)

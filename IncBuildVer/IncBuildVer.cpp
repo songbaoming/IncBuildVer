@@ -2,7 +2,7 @@
 // 文件名：IncBuildVer.cpp
 // 作者：Song Baoming,2016
 // 用途：自动增加编译版本号功能代码
-// License：
+// License：https://github.com/songbaoming/IncBuildVer/blob/master/LICENSE
 //////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
