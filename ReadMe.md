@@ -1,16 +1,14 @@
-##��Ŀ˵��
-----
-����Ŀ���� Visual Studio ������Ŀʱ���Զ����ӱ���汾�š�
+##项目说明
+该项目用于 Visual Studio 编译项目时，自动增加编译版本号。
  
-##ʹ�÷���
----
-1.������Ŀ������Ŀ�ִ���ļ���IncBuildVer.exe ����ϵͳĿ¼��Windows��System32���£�
+##使用方法
+1.将该项目编译出的可执行文件：IncBuildVer.exe 放入系统目录（Windows或System32）下；
 
-2.������ĿĿ¼�µ� Version.h ���ӵ������Ŀ�У�
+2.将该项目目录下的 Version.h 添加到你的项目中；
 
-3.�������Ŀ�е���Դ�ű��ļ���<��Ŀ��>.rc�������¸��ģ�
+3.将你的项目中的资源脚本文件（<项目名>.rc）做如下更改：
 
-����ǰ
+更改前
 
     /////////////////////////////////////////////////////////////////////////////
     //
@@ -20,11 +18,11 @@
     FILEVERSION 1, 0, 0, 1
     PRODUCTVERSION 1, 0, 0, 1
     ...
-            VALUE "FileVersion", ��1.0.0.1��
+            VALUE "FileVersion", “1.0.0.1”
             ...
-            VALUE "ProductVersion", ��1.0.0.1��
+            VALUE "ProductVersion", “1.0.0.1”
 
-���ĺ�
+更改后
 
     /////////////////////////////////////////////////////////////////////////////
     //
@@ -38,14 +36,12 @@
             ...
             VALUE "ProductVersion", VERSION_STR
             
-4.����Ŀ���ԡ���Ŀ - ���� - �������� - �����¼� - Ԥ�������¼����ġ������С��������£�
+4.在项目属性“项目 - 属性 - 配置属性 - 生成事件 - 预先生成事件”的“命令行”添加如下：
 
     IncBuildVer $(ProjectDir)Version.h
     
-##ע������
----
-�޸� Version.h ʱ��Ҫȷ�����ļ��ı��뷽ʽΪ��ANSI��
+##注意事项
+修改 Version.h 时，要确保该文件的编码方式为“ANSI”
 
 ##License
----
 [MIT](https://github.com/songbaoming/IncBuildVer/blob/master/LICENSE)
