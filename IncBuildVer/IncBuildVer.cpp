@@ -5,7 +5,6 @@
 #include "Shellapi.h"
 #include "IncBuildVer.h"
 
-#define MAX_LOADSTRING 100
 
 
 
@@ -17,15 +16,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-	TCHAR szPath[MAX_PATH];
+	// 获取参数数量及 Version.h 的完整路径
 	int nArgc;
 	LPWSTR *ppArgv = CommandLineToArgvW(GetCommandLine(), &nArgc);
 	do {
 		if (nArgc < 2) {
 			break;
 		}
-		_stprintf_s(szPath, TEXT("%sVersion.h"), ppArgv[1]);
-		HANDLE hFile = CreateFile(szPath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+		// 打开文件
+		HANDLE hFile = CreateFile(ppArgv[1], GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 		if (hFile != INVALID_HANDLE_VALUE) {
 			DWORD dwRead;
 			LARGE_INTEGER large;
@@ -36,15 +35,19 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				ReadFile(hFile, pData, large.QuadPart, &dwRead, NULL);
 				auto pos = strstr(pData, "BUILD_VER_NUM");
 				if (pos) {
+					// 定位到编译版本号位置
 					pos += strlen("BUILD_VER_NUM");
-
 					while (!isdigit(*pos)) ++pos;
+					// 获取当前编译版本号
 					DWORD dwBuildVer = atoi(pos);
 					LARGE_INTEGER large2;
+					// 定位文件指针到编译版本号位置
 					large2.QuadPart = pos - pData;
 					SetFilePointerEx(hFile, large2, NULL, FILE_BEGIN);
+					// 写入新的版本号
 					sprintf_s(pData, large2.QuadPart, "%u", ++dwBuildVer);
 					WriteFile(hFile, pData, strlen(pData), &dwRead, NULL);
+					// 写入其余部分
 					while (isdigit(*pos)) ++pos;
 					WriteFile(hFile, pos, strlen(pos), &dwRead, NULL);
 				}
