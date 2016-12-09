@@ -40,8 +40,9 @@
 
     IncBuildVer $(ProjectDir)Version.h
     
-##注意事项
-修改 Version.h 时，要确保该文件的编码方式为“ANSI”
+##修改纪录
+
+2016-12-10：完善程序功能，支持多种编码格式
 
 ##License
 [MIT](https://github.com/songbaoming/IncBuildVer/blob/master/LICENSE)
