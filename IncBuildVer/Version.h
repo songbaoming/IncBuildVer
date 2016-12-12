@@ -10,7 +10,7 @@
 // 版本号
 #define MAJOR_VER_NUM					1 // 主版本号
 #define MINOR_VER_NUM					1 // 次版本号
-#define REVISION_VER_NUM				0 // 修正版本号
+#define REVISION_VER_NUM				1 // 修正版本号
 #define BUILD_VER_NUM					0 // 编译版本号
 
 
