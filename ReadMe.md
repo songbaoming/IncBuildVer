@@ -38,11 +38,13 @@
             
 4.在项目属性“项目 - 属性 - 配置属性 - 生成事件 - 预先生成事件”的“命令行”添加如下：
 
-    IncBuildVer $(ProjectDir)Version.h
+    IncBuildVer $(Configuration) $(ProjectDir)Version.h
     
 ##修改纪录
 
-2016-12-10：完善程序功能，支持多种编码格式
+2016-12-12：修复切换编译类型后版本号仍会增加的漏洞。
+
+2016-12-10：完善程序功能，支持多种编码格式。
 
 ##License
 [MIT](https://github.com/songbaoming/IncBuildVer/blob/master/LICENSE)
