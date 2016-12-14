@@ -1,12 +1,24 @@
 ////////////////////////////////////////////////////////////////////////////////
 // 文件名：VerFile.cpp
 // 作者：Song Baoming,2016
-// 用途：操作 Version.h 文件，增加编译版本号类 CVerFile 的方法定义文件
+// 用途：操作 resource.h 和 *.rc 文件，增加编译版本号类 CVerFile 的方法定义文件
 // License：https://github.com/songbaoming/IncBuildVer/blob/master/LICENSE
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
 #include "VerFile.h"
+
+
+
+#define MAJOR				0
+#define MINOR				1
+#define REVISION			2
+#define BUILD				3
+
+
+
+
+
 
 
 CVerFile::CVerFile()
@@ -27,44 +39,143 @@ CVerFile::~CVerFile()
 }
 
 // 将指定文件中编译版本号宏的值加一
-bool CVerFile::IncBuildVer(LPCTSTR lpszFilePath)
+bool CVerFile::IncBuildVer(LPCTSTR lpszDirPath)
 {
-	static LPCTSTR pszSign = TEXT("BUILD_VER_NUM");
+	TCHAR szFilePath[MAX_PATH];
+	_stprintf_s(szFilePath, TEXT("%sresource.h"), lpszDirPath);
+	// resource.h
+	if (!IncResourceVer(szFilePath))
+		return false;
+	// .rc文件路径
+	auto pos = _tcsrchr(lpszDirPath, TEXT('\\'));
+	if (!pos)
+		return false;
+	while (pos != lpszDirPath && *(pos - 1) != TEXT('\\'))
+		--pos;
+	if (pos == lpszDirPath)
+		return false;
+	_stprintf_s(szFilePath, TEXT("%s%s"), lpszDirPath, pos);
+	szFilePath[_tcslen(szFilePath) - 1] = 0;
+	_tcscat_s(szFilePath, TEXT(".rc"));
+	// .rc
+	if (!IncRCFileVer(szFilePath))
+		return false;
+
+	return true;
+}
+
+bool CVerFile::IncResourceVer(LPCTSTR lpszFilePath)
+{
+	static LPCTSTR pszVerSign[] = {
+		TEXT("MAJOR_VER_NUM"),
+		TEXT("MINOR_VER_NUM"),
+		TEXT("REVISION_VER_NUM"),
+		TEXT("BUILD_VER_NUM"),
+		NULL
+	};
+
+	bool bRes = true;
+	
 	// 读取文件内容
 	if (!GetFileContent(lpszFilePath))
 		return false;
+
+	auto pszBegin = m_pContent;
+	for (int i = 0; pszVerSign[i]; ++i){
+		pszBegin = _tcsstr(m_pContent, pszVerSign[i]);
+		if (!pszBegin)
+			return false;
+		pszBegin += _tcslen(pszVerSign[i]);
+		m_dwVersion[i] = _ttoi(pszBegin);
+	}
 	// 跳转到编译版本号的位置
-	auto pszBegin = _tcsstr(m_pContent, pszSign);
-	if (!pszBegin)
-		return false;
-	pszBegin += _tcslen(pszSign);
 	while (*pszBegin && !_istdigit(*pszBegin)) ++pszBegin;
 	if (!*pszBegin)
 		return false;
 	auto pszEnd = pszBegin;
 	while (*pszEnd && _istdigit(*pszEnd)) ++pszEnd;
 	// 根据就版本号计算新版本号，并转换为字符串
-	DWORD dwBuildVer = _ttoi(pszBegin);
+	//DWORD dwBuildVer = _ttoi(pszBegin);
 	TCHAR szNewVer[20];
-	_stprintf_s(szNewVer, TEXT("%u"), ++dwBuildVer);
+	_stprintf_s(szNewVer, TEXT("%u"), ++m_dwVersion[BUILD]);
 
 	// 使用版本号以前的字符串重定位文件指针
 	if (!SetFilePtrWithString(m_pContent, pszBegin - m_pContent))
 		return false;
 	// 写入新版本号
-	if (!WriteContent(szNewVer))
+	if (!WriteContent(szNewVer, _tcslen(szNewVer)))
 		return false;
 	// 判断版本号长度是否一致，只有不一致时才需要重新写入版本号后的内容
-	if (pszEnd - pszBegin != _tcslen(szNewVer))
-		return WriteContent(pszEnd);
+	if (pszEnd - pszBegin != _tcslen(szNewVer)){
+		bRes = WriteContent(pszEnd, _tcslen(pszEnd));
+		SetEndOfFile(m_hFile);
+	}
+	return bRes;
+}
 
-	return true;
+bool CVerFile::IncRCFileVer(LPCTSTR lpszFilePath)
+{
+	static LPCTSTR pszSign[] = {
+		TEXT("FILEVERSION"),
+		TEXT("PRODUCTVERSION"),
+		TEXT("\"FileVersion\","),
+		TEXT("\"ProductVersion\","),
+		NULL
+	};
+	bool bRes = false;
+
+	// 读取文件内容
+	if (!GetFileContent(lpszFilePath))
+		return false;
+
+	auto pszBegin = m_pContent;
+	auto pszEnd = pszBegin;
+	TCHAR szText[100];
+	for (int i = 0; pszSign[i]; ++i){
+
+		pszEnd = _tcsstr(pszBegin, pszSign[i]);
+		if (!pszEnd)
+			return false;
+		pszEnd += _tcslen(pszSign[i]);
+		while (*pszEnd && !_istgraph(*pszEnd)) ++pszEnd;
+		if (!*pszEnd)
+			return false;
+
+		if (i == 0)
+			bRes = SetFilePtrWithString(pszBegin, pszEnd - pszBegin);
+		else
+			bRes = WriteContent(pszBegin, pszEnd - pszBegin);
+		if (!bRes)
+			return false;
+		
+		if (!i){
+			_stprintf_s(szText, TEXT("%u,%u,%u,%u"), m_dwVersion[MAJOR], m_dwVersion[MINOR]
+				, m_dwVersion[REVISION], m_dwVersion[BUILD]);
+		}else if(i == 2){
+			_stprintf_s(szText, TEXT("\"%u.%u.%u.%u\""), m_dwVersion[MAJOR], m_dwVersion[MINOR]
+				, m_dwVersion[REVISION], m_dwVersion[BUILD]);
+		}
+		if (!WriteContent(szText, _tcslen(szText)))
+			return false;
+
+		while (*pszEnd && _istprint(*pszEnd)) ++pszEnd;
+		if (!*pszEnd)
+			return false;
+		pszBegin = pszEnd;
+	}
+	// 写入剩余内容
+	bRes = WriteContent(pszEnd, _tcslen(pszEnd));
+	SetEndOfFile(m_hFile);
+
+	return bRes;
 }
 
 // 读取指定文件内容，并转换为 Unicode 编码
 bool CVerFile::GetFileContent(LPCTSTR lpszFilePath)
 {
 	// 打开文件
+	if (m_hFile)
+		CloseHandle(m_hFile);
 	m_hFile = CreateFile(lpszFilePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
 		nullptr, OPEN_EXISTING, 0, nullptr);
 	if (m_hFile == INVALID_HANDLE_VALUE)
@@ -82,42 +193,18 @@ bool CVerFile::GetFileContent(LPCTSTR lpszFilePath)
 	if (!pData)
 		return false;
 	// 获取文件编码
-	GetFileCode(pData, large.QuadPart);
+	GetFileContentCode(pData, large.QuadPart);
 	// 根据文件编码将文件内容转换成 unicode
-	if (m_dwCode == CP_UTF16) {
-		m_pContent = new TCHAR[large.QuadPart / sizeof(TCHAR) + 1];
-		if (m_pContent) {
-			memset(m_pContent, 0, large.QuadPart + sizeof(TCHAR));
-			memcpy_s(m_pContent, large.QuadPart + sizeof(TCHAR), pData + m_dwOffset, large.QuadPart - m_dwOffset);
-		}
-	}
-	else if (m_dwCode == CP_UTF16B) {
-		m_pContent = new TCHAR[large.QuadPart / sizeof(TCHAR) + 1];
-		if (m_pContent) {
-			memset(m_pContent, 0, large.QuadPart + sizeof(TCHAR));
-			char *pDst = (char*)m_pContent;
-			char *pSrc = pData + m_dwOffset;
-			for (LONGLONG i = 0; i + 1 < large.QuadPart; i += 2) {
-				pDst[i] = pSrc[i + 1];
-				pDst[i + 1] = pSrc[i];
-			}
-		}
-	}
-	else {
-		DWORD dwLen = MultiByteToWideChar(m_dwCode, 0, pData + m_dwOffset, -1, nullptr, 0);
-		if (dwLen) {
-			m_pContent = new TCHAR[dwLen];
-			if (m_pContent)
-				MultiByteToWideChar(m_dwCode, 0, pData + m_dwOffset, -1, m_pContent, dwLen);
-		}
-	}
+	if (m_pContent)
+		delete[] m_pContent;
+	m_pContent = FileContentToUnicode(pData + m_dwOffset, large.QuadPart - m_dwOffset);
 
 	UnmapViewOfFile(pData);
 	return m_pContent != nullptr;
 }
 
 // 获取该文件内容的编码格式
-bool CVerFile::GetFileCode(LPCSTR pData, LONGLONG llLen)
+bool CVerFile::GetFileContentCode(LPCSTR pData, LONGLONG llLen)
 {
 	if (llLen > 3) {
 		DWORD dwBOM = MAKELONG(MAKEWORD(pData[0], pData[1]), MAKEWORD(pData[2], 0));
@@ -183,6 +270,39 @@ int CVerFile::IsCodeUtf16(LPCSTR pString, LONGLONG llLen)
 	return 0;
 }
 
+LPTSTR CVerFile::FileContentToUnicode(LPCSTR lpszSrc, LONGLONG llLen)
+{
+	LPTSTR pContent = nullptr;
+	if (m_dwCode == CP_UTF16) {
+		pContent = new TCHAR[llLen / sizeof(TCHAR) + 1];
+		if (pContent) {
+			memset(pContent, 0, llLen + sizeof(TCHAR));
+			memcpy_s(pContent, llLen + sizeof(TCHAR), lpszSrc, llLen);
+		}
+	}
+	else if (m_dwCode == CP_UTF16B) {
+		pContent = new TCHAR[llLen / sizeof(TCHAR)+1];
+		if (pContent) {
+			memset(pContent, 0, llLen + sizeof(TCHAR));
+			char *pDst = (char*)pContent;
+			const char *pSrc = lpszSrc;
+			for (LONGLONG i = 0; i + 1 < llLen; i += 2) {
+				pDst[i] = pSrc[i + 1];
+				pDst[i + 1] = pSrc[i];
+			}
+		}
+	}
+	else {
+		DWORD dwLen = MultiByteToWideChar(m_dwCode, 0, lpszSrc, llLen, nullptr, 0);
+		if (dwLen) {
+			pContent = new TCHAR[dwLen];
+			if (pContent)
+				MultiByteToWideChar(m_dwCode, 0, lpszSrc, llLen, pContent, dwLen);
+		}
+	}
+	return pContent;
+}
+
 // 从给定的版本号之前的字符串，并根据原文件编码方式和文件内容的偏移量，
 // 计算并设置文件指针的位置，跳过编译版本号之前不会被更改的内容，
 // 用于后续写入，并减少 I/O 提高效率
@@ -203,34 +323,34 @@ bool CVerFile::SetFilePtrWithString(LPCTSTR lpszProBuildVer, DWORD dwLen)
 }
 
 // 将给定的内容，转换为原文件编码格式后，写入文件
-bool CVerFile::WriteContent(LPCTSTR lpszContent)
+bool CVerFile::WriteContent(LPCTSTR lpszContent, DWORD dwLen)
 {
 	DWORD dwWriten;
 
 	if (m_dwCode == CP_UTF16) {
-		return WriteFile(m_hFile, lpszContent, _tcslen(lpszContent) * sizeof(TCHAR), &dwWriten, nullptr);
+		return WriteFile(m_hFile, lpszContent, dwLen * sizeof(TCHAR), &dwWriten, nullptr);
 	}
 	else if (m_dwCode == CP_UTF16B) {
-		DWORD dwLen = _tcslen(lpszContent) * sizeof(TCHAR);
-		auto pDst = new char[dwLen];
+		DWORD dwBytes = dwLen * sizeof(TCHAR);
+		auto pDst = new char[dwBytes];
 		if (pDst) {
 			auto pSrc = (const char*)lpszContent;
-			for (DWORD i = 0; i + 1 < dwLen; i += 2) {
+			for (DWORD i = 0; i + 1 < dwBytes; i += 2) {
 				pDst[i] = pSrc[i + 1];
 				pDst[i + 1] = pSrc[i];
 			}
-			auto bRes = WriteFile(m_hFile, pDst, dwLen, &dwWriten, nullptr);
+			auto bRes = WriteFile(m_hFile, pDst, dwBytes, &dwWriten, nullptr);
 			delete[] pDst;
 			return bRes;
 		}
 	}
 	else {
-		int nLen = WideCharToMultiByte(m_dwCode, 0, lpszContent, -1, nullptr, 0, nullptr, nullptr);
+		int nLen = WideCharToMultiByte(m_dwCode, 0, lpszContent, dwLen, nullptr, 0, nullptr, nullptr);
 		if (!nLen)
 			return false;
 		auto pBuff = new char[nLen];
 		if (pBuff) {
-			WideCharToMultiByte(m_dwCode, 0, lpszContent, -1, pBuff, nLen, nullptr, nullptr);
+			WideCharToMultiByte(m_dwCode, 0, lpszContent, dwLen, pBuff, nLen, nullptr, nullptr);
 			auto bRes = WriteFile(m_hFile, pBuff, nLen - 1, &dwWriten, nullptr);
 			delete[] pBuff;
 			return bRes;
