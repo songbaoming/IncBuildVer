@@ -295,9 +295,11 @@ LPTSTR CVerFile::FileContentToUnicode(LPCSTR lpszSrc, LONGLONG llLen)
 	else {
 		DWORD dwLen = MultiByteToWideChar(m_dwCode, 0, lpszSrc, llLen, nullptr, 0);
 		if (dwLen) {
-			pContent = new TCHAR[dwLen];
-			if (pContent)
+			pContent = new TCHAR[dwLen + 1];
+			if (pContent){
 				MultiByteToWideChar(m_dwCode, 0, lpszSrc, llLen, pContent, dwLen);
+				pContent[dwLen] = 0;
+			}
 		}
 	}
 	return pContent;
@@ -351,7 +353,7 @@ bool CVerFile::WriteContent(LPCTSTR lpszContent, DWORD dwLen)
 		auto pBuff = new char[nLen];
 		if (pBuff) {
 			WideCharToMultiByte(m_dwCode, 0, lpszContent, dwLen, pBuff, nLen, nullptr, nullptr);
-			auto bRes = WriteFile(m_hFile, pBuff, nLen - 1, &dwWriten, nullptr);
+			auto bRes = WriteFile(m_hFile, pBuff, nLen, &dwWriten, nullptr);
 			delete[] pBuff;
 			return bRes;
 		}
