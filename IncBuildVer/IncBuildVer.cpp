@@ -28,19 +28,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		// 判断命令行参数数量是否大于等于3
 		if (nArgc < 3)
 			break;
-		// 根据命令行中项目路径获取该项目下的最后编译类型记录文件路径
-		TCHAR szLogPath[MAX_PATH];
-		_stprintf_s(szLogPath, TEXT("%sibv_lbt.log"), ppArgv[2]);
-		// 读取最后编译的程序类型
-		TCHAR szType[10];
-		GetPrivateProfileString(TEXT("LASTBUILD"), TEXT("TYPE"), TEXT(""), szType, 10, szLogPath);
-		
-		if (_tcsicmp(szType, ppArgv[1])){
-			// 本次编译类型和最后不同，写入本次编译类型
-			WritePrivateProfileString(TEXT("LASTBUILD"), TEXT("TYPE"), ppArgv[1], szLogPath);
-			if(szType[0])
-				break; // 最后编译类型为空时，说明是第一次编译，需要对版本号加一。所以不为空时跳过加一操作
-		}
 		
 		// 对编译版本号加一
 		CVerFile file;
