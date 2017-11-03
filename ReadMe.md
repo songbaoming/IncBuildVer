@@ -1,7 +1,7 @@
-##项目用途
+## 项目用途
 该项目用于 Visual Studio 编译项目时，自动增加编译版本号。
  
-##使用方法
+## 使用方法
 1.将该项目编译出的可执行文件：IncBuildVer.exe 放入系统目录（Windows或System32）下；
 
 2.在你项目中的资源宏声明文件（resource.h）的开头添加：
@@ -15,13 +15,13 @@
 
     IncBuildVer $(ProjectDir)
     
-##使用说明
+## 使用说明
 
 1.如果想在代码中或在界面上使用当前版本号，只需包含“resource.h”头文件，然后直接使用上述宏；
 
 2.手动编辑版本号时，只需要修改头文件“resource.h”中对应宏即可，程序会在这些宏对应值的基础上更新BUILD_VER_NUM及*.rc中的版本字段。
 
-##修改纪录
+## 修改纪录
 
 2016-12-25：精简逻辑，去掉编译类型的判断，由用户决定在哪种编译类型下使用。
 
@@ -31,5 +31,5 @@
 
 2016-12-10：完善程序功能，支持多种编码格式。
 
-##License
+## License
 [MIT](https://github.com/songbaoming/IncBuildVer/blob/master/LICENSE)
