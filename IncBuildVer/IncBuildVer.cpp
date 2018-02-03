@@ -8,7 +8,7 @@
 #include "stdafx.h"
 #include "Shellapi.h"
 #include "IncBuildVer.h"
-#include "VerFile.h"
+#include "VersionManager.h"
 
 
 
@@ -24,15 +24,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	// 获取命令行参数数量
 	int nArgc;
 	LPWSTR *ppArgv = CommandLineToArgvW(GetCommandLine(), &nArgc);
-	do{
-		// 判断命令行参数数量是否大于等于3
-		if (nArgc < 3)
-			break;
-		
+
+	// 判断命令行参数数量是否大于1
+	if (nArgc > 1) {
 		// 对编译版本号加一
-		CVerFile file;
-		file.IncBuildVer(ppArgv[2]);
-	} while (false);
+		CVersionManager manager;
+		manager.IncBuildVer(ppArgv[1]);
+	}
 
 	LocalFree(ppArgv);
 	return 0;

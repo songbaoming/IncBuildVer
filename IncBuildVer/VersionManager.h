@@ -12,23 +12,25 @@
 
 
 
-class CVerFile
+class CVersionManager
 {
 public:
-	CVerFile();
-	~CVerFile();
+	CVersionManager();
+	~CVersionManager();
 
 	// 功能：将指定文件中编译版本号宏的值加一
 	// 参数：LPCTSTR lpszFilePath：目标文件的完整路径
 	// 返回值：成功时返回 true，否则返回 false
-	bool IncBuildVer(LPCTSTR lpszDirPath);
+	bool IncBuildVer(LPCTSTR lpszProjectPath);
 
 protected:
 	DWORD m_dwOffset; // 有效文件内容相对文件开头的偏移字节数
 	DWORD m_dwCode; // 文件的字符编码格式
-	DWORD m_dwVersion[4]; // 项目的版本号
+	DWORD m_dwVerArr[4]; // 项目的版本号
 	HANDLE m_hFile; // 目标文件句柄
 	LPTSTR m_pContent; // 转换为 Unicode 编码格式后的文件内容的指针
+
+	DWORD ParseVerPos(LPCTSTR lpszContent, LPCTSTR &lpszFirstValidPos, LPCTSTR *lppszVerPos);
 
 	// 从 resource.h 文件获取原始版本号，并更新编译版本号写回
 	bool IncResourceVer(LPCTSTR lpszFilePath);
@@ -54,5 +56,6 @@ protected:
 	bool SetFilePtrWithString(LPCTSTR lpszProBuildVer, DWORD dwLen);
 	// 将给定的内容，转换为原文件编码格式后，写入文件
 	bool WriteContent(LPCTSTR lpszContent, DWORD dwLen);
+
 };
 

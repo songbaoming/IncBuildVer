@@ -27,7 +27,7 @@
     <ClInclude Include="IncBuildVer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="VerFile.h">
+    <ClInclude Include="VersionManager.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -38,7 +38,7 @@
     <ClCompile Include="IncBuildVer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="VerFile.cpp">
+    <ClCompile Include="VersionManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
