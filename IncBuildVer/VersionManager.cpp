@@ -364,18 +364,14 @@ bool CVersionManager::IsCodeUtf8(LPCSTR pString, LONGLONG llLen)
 		if (pData[i] > 0x80) {
 			int nCount = 1;
 			while ((pData[i] << nCount) & 0x80) ++nCount;
-			if (nCount > 6 || i + nCount > llLen)
+			if (nCount < 2 || nCount > 6 || i + nCount > llLen)
 				return false;
 			for (int j = 1; j < nCount; ++j) {
 				if ((pData[i + j] & 0xc0) != 0x80)
 					return false;
 			}
-			//i += nCount;
-			//bRet = true;
 			return true;
 		}
-		//else
-		//	++i;
 	}
 	return bRet;
 }
