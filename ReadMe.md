@@ -10,16 +10,18 @@
     
 ## 使用说明
 
-1.程序会自动在你项目中的资源宏声明文件（resource.h）的开头添加：
+1.确保你的项目里包含 “Version”资源；
+
+2.程序会自动在你项目中的资源宏声明文件（resource.h）的开头添加：
 
     #define MAJOR_VER_NUM					0
 	#define MINOR_VER_NUM					0
 	#define REVISION_VER_NUM				0
 	#define BUILD_VER_NUM					1
 
-2.如果想在代码中或在界面上使用当前版本号，只需包含“resource.h”头文件，然后直接使用上述宏；
+3.如果想在代码中或在界面上使用当前版本号，只需包含“resource.h”头文件，然后直接使用上述宏；
 
-3.手动编辑版本号时，只需要修改头文件“resource.h”中对应宏即可，程序会在这些宏对应值的基础上更新BUILD_VER_NUM及*.rc中的版本字段。
+4.手动编辑版本号时，只需要修改头文件“resource.h”中对应宏即可，程序会在这些宏对应值的基础上更新BUILD_VER_NUM及*.rc中的版本字段。
 
 ## 修改纪录
 
