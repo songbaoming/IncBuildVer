@@ -1,13 +1,17 @@
 ## 项目用途
+
+[![Build Status](https://songbaoming.visualstudio.com/IncBuildVer/_apis/build/status/songbaoming.IncBuildVer?branchName=master)](https://songbaoming.visualstudio.com/IncBuildVer/_build/latest?definitionId=2&branchName=master) [![GitHub release (latest by date)](https://img.shields.io/github/v/release/songbaoming/IncBuildVer)](https://github.com/songbaoming/IncBuildVer/releases) [![GitHub issues](https://img.shields.io/github/issues/songbaoming/IncBuildVer)](https://github.com/songbaoming/IncBuildVer/issues) [![GitHub](https://img.shields.io/github/license/songbaoming/IncBuildVer)](https://github.com/songbaoming/IncBuildVer/blob/master/LICENSE)
+
 该项目用于 Visual Studio 编译项目时，自动增加编译版本号。
- 
+
 ## 使用方法
+
 1.将该项目编译出的可执行文件：IncBuildVer.exe 放入系统目录（Windows或System32）下；
 
 2.在项目属性“菜单栏 - 项目 - 属性”中切换到要使用的编译类型（Debug/Release），然后在右侧“配置属性 - 生成事件 - 预先生成事件”的“命令行”添加如下：
 
     IncBuildVer $(ProjectDir)
-    
+
 ## 使用说明
 
 1.确保你的项目里包含 “Version”资源；
@@ -15,9 +19,9 @@
 2.程序会自动在你项目中的资源宏声明文件（resource.h）的开头添加：
 
     #define MAJOR_VER_NUM					0
-	#define MINOR_VER_NUM					0
-	#define REVISION_VER_NUM				0
-	#define BUILD_VER_NUM					1
+    #define MINOR_VER_NUM					0
+    #define REVISION_VER_NUM				0
+    #define BUILD_VER_NUM					1
 
 3.如果想在代码中或在界面上使用当前版本号，只需包含“resource.h”头文件，然后直接使用上述宏；
 
@@ -36,4 +40,5 @@
 2016-12-10：完善程序功能，支持多种编码格式。
 
 ## License
+
 [MIT](https://github.com/songbaoming/IncBuildVer/blob/master/LICENSE)
