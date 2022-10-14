@@ -7,30 +7,26 @@
 
 #include "stdafx.h"
 #include "VersionManager.h"
-
-
-
+#include <string>
 
 enum {
 	MAJOR,
 	MINOR,
-	REVISION,
+	PATCH,
 	BUILD
 };
 
-#define VERSION_COUNT						4
+#define VERSION_COUNT 4
 
 static LPCTSTR g_pszSign[] = {
-	TEXT("MAJOR_VER_NUM"),
-	TEXT("MINOR_VER_NUM"),
-	TEXT("REVISION_VER_NUM"),
-	TEXT("BUILD_VER_NUM"),
+	TEXT("VER_MAJOR"),
+	TEXT("VER_MINOR"),
+	TEXT("VER_PATCH"),
+	TEXT("VER_BUILD"),
 	NULL
 };
 
-
 DWORD g_dwSignLen[VERSION_COUNT];
-
 
 CVersionManager::CVersionManager()
 	: m_dwOffset(0)
@@ -43,7 +39,6 @@ CVersionManager::CVersionManager()
 		g_dwSignLen[i] = _tcslen(g_pszSign[i]);
 }
 
-
 CVersionManager::~CVersionManager()
 {
 	if (m_pContent)
@@ -55,21 +50,23 @@ CVersionManager::~CVersionManager()
 // 将指定文件中编译版本号宏的值加一
 bool CVersionManager::IncBuildVer(LPCTSTR lpszProjectPath)
 {
-	TCHAR szFilePath[MAX_PATH] = {};
-	_stprintf_s(szFilePath, TEXT("%sresource.h"), lpszProjectPath);
+	std::basic_string<TCHAR, std::char_traits<TCHAR>, std::allocator<TCHAR>> path(lpszProjectPath), name;
+	if (*path.rbegin() != TEXT('\\'))
+		path.push_back(TEXT('\\'));
+
 	// 获取并更改 resource.h 中的版本信息
-	if (!IncResourceVer(szFilePath))
+	if (!IncResourceVer((path + TEXT("resource.h")).c_str()))
 		return false;
 	// *.rc文件路径
-	int nIndex = _tcslen(lpszProjectPath);
-	for (--nIndex; nIndex > 0 && lpszProjectPath[nIndex - 1] != TEXT('\\'); --nIndex);
-	if (nIndex <= 0)
-		return false;
-	_stprintf_s(szFilePath, TEXT("%s%s"), lpszProjectPath, lpszProjectPath + nIndex);
-	szFilePath[_tcslen(szFilePath) - 1] = 0;
-	_tcscat_s(szFilePath, TEXT(".rc"));
+	auto end = path.size() - 1;
+	auto pos = path.rfind(TEXT('\\'), end - 1);
+	if (pos != decltype(path)::npos)
+		++pos;
+	else
+		pos = 0;
+	name = path.substr(pos, end - pos) + TEXT(".rc");
 	// 更改 *.rc 中版本信息
-	if (!IncRCFileVer(szFilePath))
+	if (!IncRCFileVer((path + name).c_str()))
 		return false;
 
 	return true;
@@ -107,7 +104,7 @@ DWORD CVersionManager::ParseVerPos(LPCTSTR lpszContent, LPCTSTR &lpszFirstValidP
 					dwComment = COMMENT_LINE;
 					chLast = 0x20;
 					break;
-				}else if (pos[1] == TEXT('*')) {
+				} else if (pos[1] == TEXT('*')) {
 					++pos;
 					dwComment = COMMENT_BLOCK;
 					chLast = 0x20;
@@ -120,10 +117,10 @@ DWORD CVersionManager::ParseVerPos(LPCTSTR lpszContent, LPCTSTR &lpszFirstValidP
 
 			if (_istspace(chLast)) {
 				for (int i = 0; g_pszSign[i]; ++i) {
-					if (*pos == g_pszSign[i][0] && !_tcsncmp(pos, g_pszSign[i], g_dwSignLen[i]) &&
-						_istspace(*(pos + g_dwSignLen[i]))) {
+					if (*pos == g_pszSign[i][0] && !_tcsncmp(pos, g_pszSign[i], g_dwSignLen[i]) && _istspace(*(pos + g_dwSignLen[i]))) {
 						pos += g_dwSignLen[i];
-						while (!_istdigit(*pos)) ++pos;
+						while (!_istdigit(*pos))
+							++pos;
 						lppszVerPos[i] = pos;
 						m_dwVerArr[i] = _ttoi(pos);
 						++dwCount;
@@ -131,7 +128,7 @@ DWORD CVersionManager::ParseVerPos(LPCTSTR lpszContent, LPCTSTR &lpszFirstValidP
 					}
 				}
 			}
-			
+
 			chLast = *pos;
 			break;
 		}
@@ -140,7 +137,6 @@ DWORD CVersionManager::ParseVerPos(LPCTSTR lpszContent, LPCTSTR &lpszFirstValidP
 		lpszFirstValidPos = pos;
 	return dwCount;
 }
-
 
 bool CVersionManager::IncResourceVer(LPCTSTR lpszFilePath)
 {
@@ -153,33 +149,6 @@ bool CVersionManager::IncResourceVer(LPCTSTR lpszFilePath)
 
 	// 解析版本宏，获取版本号
 	auto dwCount = ParseVerPos(m_pContent, pszFirstValidPos, pszVerPos);
-	//TCHAR chLast = 0;
-	//bool bComment = false;
-	//for (auto pos = m_pContent; *pos; ++pos) {
-	//	if (bComment) {
-
-	//	}
-	//}
-	//auto pszBegin = m_pContent;
-	//for (int i = 0; g_pszSign[i]; ++i){
-	//	pszVerPos[i] = m_pContent;
-	//	int nLen = _tcslen(g_pszSign[i]);
-	//	while ((pszVerPos[i] = _tcsstr(pszVerPos[i] + 1, g_pszSign[i])) &&
-	//		!_istspace(*(pszVerPos[i] - 1)) && !_istspace(*(pszVerPos[i] + nLen)));
-	//	if (!pszVerPos[i]) {
-	//		bMissVersion = true;
-	//		continue;
-	//	}
-	//	m_dwVersion[i] = _ttoi(pszVerPos[i] + nLen);
-	//}
-	// 跳转到编译版本号的位置
-	//while (*pszBegin && !_istdigit(*pszBegin)) ++pszBegin;
-	//if (!*pszBegin)
-	//	return false;
-	//auto pszEnd = pszBegin;
-	//while (*pszEnd && _istdigit(*pszEnd)) ++pszEnd;
-	// 根据旧版本号计算新版本号，并转换为字符串
-	//DWORD dwBuildVer = _ttoi(pszBegin);
 
 	TCHAR szText[100];
 	if (dwCount != VERSION_COUNT) {
@@ -204,11 +173,12 @@ bool CVersionManager::IncResourceVer(LPCTSTR lpszFilePath)
 			_stprintf_s(szText, TEXT("%u"), ++m_dwVerArr[BUILD]);
 			if (!WriteContent(szText, _tcslen(szText)))
 				return false;
-			while (_istdigit(*(pszVerPos[BUILD]))) ++(pszVerPos[BUILD]);
+			while (_istdigit(*(pszVerPos[BUILD])))
+				++(pszVerPos[BUILD]);
 			// 判断版本号长度是否一致，只有不一致时才需要重新写入版本号后的内容
 			if (!WriteContent(pszVerPos[BUILD], _tcslen(pszVerPos[BUILD])))
 				return false;
-		}else {
+		} else {
 			if (!WriteContent(pszFirstValidPos, _tcslen(pszFirstValidPos)))
 				return false;
 		}
@@ -232,8 +202,7 @@ bool CVersionManager::IncResourceVer(LPCTSTR lpszFilePath)
 			SetEndOfFile(m_hFile);
 		}
 	}
-	
-	
+
 	return bRes;
 }
 
@@ -255,13 +224,14 @@ bool CVersionManager::IncRCFileVer(LPCTSTR lpszFilePath)
 	auto pszBegin = m_pContent;
 	auto pszEnd = pszBegin;
 	TCHAR szText[100];
-	for (int i = 0; pszSign[i]; ++i){
+	for (int i = 0; pszSign[i]; ++i) {
 
 		pszEnd = _tcsstr(pszBegin, pszSign[i]);
 		if (!pszEnd)
 			return false;
 		pszEnd += _tcslen(pszSign[i]);
-		while (*pszEnd && !_istgraph(*pszEnd)) ++pszEnd;
+		while (*pszEnd && !_istgraph(*pszEnd))
+			++pszEnd;
 		if (!*pszEnd)
 			return false;
 
@@ -271,18 +241,17 @@ bool CVersionManager::IncRCFileVer(LPCTSTR lpszFilePath)
 			bRes = WriteContent(pszBegin, pszEnd - pszBegin);
 		if (!bRes)
 			return false;
-		
-		if (!i){
-			_stprintf_s(szText, TEXT("%u,%u,%u,%u"), m_dwVerArr[MAJOR], m_dwVerArr[MINOR]
-				, m_dwVerArr[REVISION], m_dwVerArr[BUILD]);
-		}else if(i == 2){
-			_stprintf_s(szText, TEXT("\"%u.%u.%u.%u\""), m_dwVerArr[MAJOR], m_dwVerArr[MINOR]
-				, m_dwVerArr[REVISION], m_dwVerArr[BUILD]);
+
+		if (!i) {
+			_stprintf_s(szText, TEXT("%u,%u,%u,%u"), m_dwVerArr[MAJOR], m_dwVerArr[MINOR], m_dwVerArr[PATCH], m_dwVerArr[BUILD]);
+		} else if (i == 2) {
+			_stprintf_s(szText, TEXT("\"%u.%u.%u.%u\""), m_dwVerArr[MAJOR], m_dwVerArr[MINOR], m_dwVerArr[PATCH], m_dwVerArr[BUILD]);
 		}
 		if (!WriteContent(szText, _tcslen(szText)))
 			return false;
 
-		while (*pszEnd && _istprint(*pszEnd)) ++pszEnd;
+		while (*pszEnd && _istprint(*pszEnd))
+			++pszEnd;
 		if (!*pszEnd)
 			return false;
 		pszBegin = pszEnd;
@@ -312,7 +281,7 @@ bool CVersionManager::GetFileContent(LPCTSTR lpszFilePath)
 	HANDLE hMapping = CreateFileMapping(m_hFile, nullptr, PAGE_READONLY, 0, 0, nullptr);
 	if (!hMapping)
 		return false;
-	auto pData = (char*)MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);
+	auto pData = (char *)MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);
 	CloseHandle(hMapping);
 	if (!pData)
 		return false;
@@ -335,23 +304,21 @@ bool CVersionManager::GetFileContentCode(LPCSTR pData, LONGLONG llLen)
 		if (dwBOM == 0xBFBBEF) { // utf-8
 			m_dwCode = CP_UTF8;
 			m_dwOffset = 3;
-		}
-		else if (LOWORD(dwBOM) == 0xFFFE) { // utf-16 big endian
+		} else if (LOWORD(dwBOM) == 0xFFFE) { // utf-16 big endian
 			m_dwCode = CP_UTF16B;
 			m_dwOffset = 2;
-		}
-		else if (LOWORD(dwBOM) == 0xFEFF) { // utf-16
+		} else if (LOWORD(dwBOM) == 0xFEFF) { // utf-16
 			m_dwCode = CP_UTF16;
 			m_dwOffset = 2;
 		}
 	}
-	if(!m_dwCode) {
+	if (!m_dwCode) {
 		if (IsCodeUtf8(pData, llLen))
 			m_dwCode = CP_UTF8;
 		else
 			m_dwCode = IsCodeUtf16(pData, llLen);
 	}
-	
+
 	return true;
 }
 
@@ -363,7 +330,8 @@ bool CVersionManager::IsCodeUtf8(LPCSTR pString, LONGLONG llLen)
 	for (LONGLONG i = 0; i < llLen; ++i) {
 		if (pData[i] > 0x80) {
 			int nCount = 1;
-			while ((pData[i] << nCount) & 0x80) ++nCount;
+			while ((pData[i] << nCount) & 0x80)
+				++nCount;
 			if (nCount < 2 || nCount > 6 || i + nCount > llLen)
 				return false;
 			for (int j = 1; j < nCount; ++j) {
@@ -399,24 +367,22 @@ LPTSTR CVersionManager::FileContentToUnicode(LPCSTR lpszSrc, LONGLONG llLen)
 			memset(pContent, 0, llLen + sizeof(TCHAR));
 			memcpy_s(pContent, llLen + sizeof(TCHAR), lpszSrc, llLen);
 		}
-	}
-	else if (m_dwCode == CP_UTF16B) {
-		pContent = new TCHAR[llLen / sizeof(TCHAR)+1];
+	} else if (m_dwCode == CP_UTF16B) {
+		pContent = new TCHAR[llLen / sizeof(TCHAR) + 1];
 		if (pContent) {
 			memset(pContent, 0, llLen + sizeof(TCHAR));
-			char *pDst = (char*)pContent;
+			char *pDst = (char *)pContent;
 			const char *pSrc = lpszSrc;
 			for (LONGLONG i = 0; i + 1 < llLen; i += 2) {
 				pDst[i] = pSrc[i + 1];
 				pDst[i + 1] = pSrc[i];
 			}
 		}
-	}
-	else {
+	} else {
 		DWORD dwLen = MultiByteToWideChar(m_dwCode, 0, lpszSrc, llLen, nullptr, 0);
 		if (dwLen) {
 			pContent = new TCHAR[dwLen + 1];
-			if (pContent){
+			if (pContent) {
 				MultiByteToWideChar(m_dwCode, 0, lpszSrc, llLen, pContent, dwLen);
 				pContent[dwLen] = 0;
 			}
@@ -433,13 +399,12 @@ bool CVersionManager::SetFilePtrWithString(LPCTSTR lpszProBuildVer, DWORD dwLen)
 	LARGE_INTEGER large = { m_dwOffset };
 
 	if (m_dwCode != CP_UTF16 && m_dwCode != CP_UTF16B) {
-		if(dwLen)
-		dwLen = WideCharToMultiByte(m_dwCode, 0, lpszProBuildVer, dwLen, nullptr, 0, nullptr, nullptr);
+		if (dwLen)
+			dwLen = WideCharToMultiByte(m_dwCode, 0, lpszProBuildVer, dwLen, nullptr, 0, nullptr, nullptr);
 		large.QuadPart += dwLen;
-	}
-	else
+	} else
 		large.QuadPart += dwLen * sizeof(TCHAR);
-	
+
 	return TRUE == SetFilePointerEx(m_hFile, large, nullptr, FILE_BEGIN);
 }
 
@@ -450,12 +415,11 @@ bool CVersionManager::WriteContent(LPCTSTR lpszContent, DWORD dwLen)
 
 	if (m_dwCode == CP_UTF16) {
 		return WriteFile(m_hFile, lpszContent, dwLen * sizeof(TCHAR), &dwWriten, nullptr);
-	}
-	else if (m_dwCode == CP_UTF16B) {
+	} else if (m_dwCode == CP_UTF16B) {
 		DWORD dwBytes = dwLen * sizeof(TCHAR);
 		auto pDst = new char[dwBytes];
 		if (pDst) {
-			auto pSrc = (const char*)lpszContent;
+			auto pSrc = (const char *)lpszContent;
 			for (DWORD i = 0; i + 1 < dwBytes; i += 2) {
 				pDst[i] = pSrc[i + 1];
 				pDst[i + 1] = pSrc[i];
@@ -464,8 +428,7 @@ bool CVersionManager::WriteContent(LPCTSTR lpszContent, DWORD dwLen)
 			delete[] pDst;
 			return bRes;
 		}
-	}
-	else {
+	} else {
 		int nLen = WideCharToMultiByte(m_dwCode, 0, lpszContent, dwLen, nullptr, 0, nullptr, nullptr);
 		if (!nLen)
 			return false;
@@ -477,6 +440,6 @@ bool CVersionManager::WriteContent(LPCTSTR lpszContent, DWORD dwLen)
 			return bRes;
 		}
 	}
-	
+
 	return false;
 }
